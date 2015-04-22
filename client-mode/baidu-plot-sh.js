@@ -7,8 +7,8 @@ var casetrips = []
 var baiduPoints = [];
 var tripLength = 0;
 var color;
-var caseTripSet;
-var currentTripIdx;
+var caseTripSet, currentTrip;
+var currentTripIdx, currentPointIdx;
 
 function initialize() {
 	mp = new BMap.Map("map-canvas");
@@ -59,22 +59,35 @@ function plotTrips( ) {
 	// map one case onto the map
 	var i = currentTripIdx;
 	var trips = caseTripSet;
+	currentTrip = trips[i];
 	
-	console.log('Plot trip ' + i);
 	if (i == trips.length)
 		return;
 	
-	tripLength = trips[i].length;
 	
-	var j = 0;
-	while (j < tripLength)	// each GPS sample in Trip
-	{
-		var p = new BMap.Point( trips[i][j][1], trips[i][j][0] );
-		BMap.Convertor.translate( p, 0, translateCallback );
-		j++;
-	}
+	console.log('Plot trip ' + i);
 	
+	if (i==0)
+		color = '#9370DB';
+	else
+		color = '#DC143C';
+	
+	tripLength = currentTrip.length;
+	
+	
+	currentPointIdx = 0;
+	// convert and plot 
+	convertPoint();
 }
+
+
+function convertPoint() {
+	var coords = currentTrip[currentPointIdx];
+	var p = new BMap.Point( coords[1], coords[0] );
+	BMap.Convertor.translate( p, 0, translateCallback );
+	currentPointIdx ++;
+}
+
 
 
 function plotCase( idx ) {
@@ -99,11 +112,6 @@ function translateCallback(point) {
 		r.done(function() {
 			if (baiduPoints.length == tripLength) {
 				
-				if (currentTripIdx==0)
-					color = '#9370DB';
-				else
-					color = '#DC143C';
-				
 				var tripPath = new BMap.Polyline(baiduPoints, {
 					strokeColor: color,
 					strokeOpacity: 1.0,
@@ -124,6 +132,8 @@ function translateCallback(point) {
 				// plot next trips
 				currentTripIdx++;
 				plotTrips();
+			} else {
+				convertPoint();
 			}
 		});
 	});
