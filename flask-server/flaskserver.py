@@ -1,5 +1,5 @@
 from flask import Flask
-from flask import render_template
+from flask import render_template, request
 from flask.ext.pymongo import PyMongo
 
 
@@ -19,10 +19,18 @@ def showMap():
     return render_template('SH_maps.html');
     
     
+
+
+@app.route('/tripset/')
+def getTripSetFromMongoDB( ):
+    print request.args
+    return json.dump(request.args)
     
-@app.route('/trip/<int:tripID>')    
-def getTripCoordsFromMongoDB( tripID ):
+    
+@app.route('/trip/')
+def getTripCoordsFromMongoDB( ):
     """Get the sequence of GPS coordinates for given trip ID"""
+    tripID = int( request.args.get('id') )
     trip = mongo.db.trips.find_one_or_404( {'id': tripID} )
     records = trip['records']
     res = []

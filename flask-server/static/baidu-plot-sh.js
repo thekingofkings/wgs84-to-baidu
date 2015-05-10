@@ -3,12 +3,9 @@ window.onload = initialize;
 
 var mp;
 var shownMarkers = [];
-var casetrips = []
 var baiduPoints = [];
 var tripLength = 0;
 var color;
-var caseTripSet, currentTrip;
-var currentTripIdx, currentPointIdx;
 
 function initialize() {
 	mp = new BMap.Map("map-canvas");
@@ -54,6 +51,61 @@ function removeShownMarkers(event) {
 }
 
 
+function plotTrip( coords, color ) {
+	var points = [];
+	for (var i = 0; i < coords.length; i++) 
+	{
+		var p = new BMap.Point( coords[i].x, coords[i].y );
+		points.push(p);
+	}
+	
+	var tripPath = new BMap.Polyline( points, {
+			strokeColor: color,
+			strokeOpacity: 1.0,
+			strokeWeight: 2,
+			enableEditing: true,
+	});
+	
+	mp.addOverlay(tripPath);
+	tripPath.addEventListener('mouseover', showTripMarkers);
+	tripPath.addEventListener('mouseout', removeShownMarkers);
+}
+
+
+
+/* Answer the event:
+	Button "Plot Trip" is pressed
+*/
+function plotTripByID() {
+	var id = $('input[name=tripID]').val();
+	$.ajax({
+		type: 'get',
+		url: '/trip/',
+		data: {id: id},
+		success: function(data) {
+			var d = JSON.parse(data);
+			var color = '#DC143C';
+			plotTrip(d, color);
+			message(id + ' is plotted');
+		}
+	});
+}
+		
+	
+function message( content )
+{
+	$('#line').html( content )
+}
+
+
+function plotCase( idx ) {
+	caseTripSet = cases[idx];
+	currentTripIdx = 0;
+	plotTrips();
+}
+
+
+
 
 function plotTrips( ) {
 	// map one case onto the map
@@ -76,65 +128,23 @@ function plotTrips( ) {
 	
 	
 	currentPointIdx = 0;
-	// convert and plot 
-	convertPoint();
-}
-
-
-function convertPoint() {
-	var coords = currentTrip[currentPointIdx];
-	var p = new BMap.Point( coords[1], coords[0] );
-	BMap.Convertor.translate( p, 0, translateCallback );
-	currentPointIdx ++;
-}
-
-
-
-function plotCase( idx ) {
-	caseTripSet = cases[idx];
-	currentTripIdx = 0;
-	plotTrips();
-}
-
-
-
-/* GPS convert to Baidu coordinate 
- *  This function is an asynchronized.
- */
-function translateCallback(point) {
-	var r = $.Deferred();
 	
-	baiduPoints.push(point);
-	console.log(baiduPoints.length + ' ' + tripLength);
-	
-	r.resolve();
-	return $.Deferred( function() {
-		r.done(function() {
-			if (baiduPoints.length == tripLength) {
-				
-				var tripPath = new BMap.Polyline(baiduPoints, {
-					strokeColor: color,
-					strokeOpacity: 1.0,
-					strokeWeight: 2,
-					enableEditing: true,
-				});
-					
-				mp.addOverlay(tripPath);
-				
-				tripPath.addEventListener('mouseover', showTripMarkers);
-				tripPath.addEventListener('mouseout', removeShownMarkers);
-				
-				// save trips in global space.
-				casetrips.push(tripPath);
-				
-				baiduPoints = [];
-				
-				// plot next trips
-				currentTripIdx++;
-				plotTrips();
-			} else {
-				convertPoint();
-			}
-		});
+	var tripPath = new BMap.Polyline(baiduPoints, {
+				strokeColor: color,
+				strokeOpacity: 1.0,
+				strokeWeight: 2,
+				enableEditing: true,
 	});
+		
+	mp.addOverlay(tripPath);
+	
+	tripPath.addEventListener('mouseover', showTripMarkers);
+	tripPath.addEventListener('mouseout', removeShownMarkers);
+	
+	// save trips in global space.
+	casetrips.push(tripPath);
+	currentTripIdx++;
+				
 }
+
+	
